@@ -22,4 +22,3 @@ diagrams: clean
 clean:
 	@cargo clean
 	@rm -rf "$(GENERATED_DIR)"
-

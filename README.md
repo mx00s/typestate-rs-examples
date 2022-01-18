@@ -1,6 +1,6 @@
 # [`typestate`] examples
 
-Examples are ported from [_Type-Driven Development with Idris_](https://www.manning.com/books/type-driven-development-with-idris) by Edwin Brady.
+See the [index of examples](./examples/README.md).
 
 ## Usage
 
