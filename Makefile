@@ -10,7 +10,7 @@ run:
 docs:
 	@cargo doc --examples
 
-show-docs: docs
+show-docs:
 	@cargo doc --examples --open
 
 diagrams: clean
