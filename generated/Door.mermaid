@@ -1,0 +1,6 @@
+stateDiagram-v2
+[*] --> Opened : initial
+Closed --> Closed : ring_bell
+Closed --> Opened : open
+Opened --> Closed : close
+Opened --> [*] : r#final

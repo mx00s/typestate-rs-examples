@@ -1,0 +1,10 @@
+digraph Automata {
+  graph [pad="0.25", nodesep="0.75", ranksep="1"];
+  _initial_ [label="", fillcolor=black, fixedsize=true, height=0.25, style=filled, shape=circle];
+  _final_ [label="", fillcolor=black, fixedsize=true, height=0.25, style=filled, shape=doublecircle];
+  Closed -> Closed [label="ring_bell"];
+  Closed -> Opened [label="open"];
+  Opened -> Closed [label="close"];
+  Opened -> _final_ [label="r#final"];
+  _initial_ -> Opened [label="initial"];
+}
