@@ -1,0 +1,21 @@
+@startuml
+hide empty description
+[*] --> NoCoinsNorChocolates : initial
+state VendResult <<choice>>
+VendResult --> CoinsAndChocolates
+VendResult --> NoCoinsButChocolates
+VendResult --> CoinsButNoChocolates
+VendResult --> NoCoinsNorChocolates
+NoCoinsButChocolates --> CoinsAndChocolates : insert_coin
+NoCoinsButChocolates --> NoCoinsButChocolates : get_coins
+NoCoinsButChocolates --> NoCoinsButChocolates : refill
+CoinsButNoChocolates --> NoCoinsNorChocolates : get_coins
+CoinsButNoChocolates --> CoinsButNoChocolates : insert_coin
+CoinsAndChocolates --> NoCoinsButChocolates : get_coins
+CoinsAndChocolates --> VendResult : vend
+CoinsAndChocolates --> CoinsAndChocolates : insert_coin
+NoCoinsNorChocolates --> CoinsButNoChocolates : insert_coin
+NoCoinsNorChocolates --> NoCoinsNorChocolates : get_coins
+NoCoinsNorChocolates --> [*] : r#final
+NoCoinsNorChocolates --> NoCoinsButChocolates : refill
+@end

@@ -14,7 +14,7 @@ show-docs:
 	@cargo doc --examples --open
 
 diagrams: clean
-	@EXPORT_FOLDER="$(GENERATED_DIR)" cargo build --examples --features export-diagrams
+	@EXPORT_FOLDER="$(GENERATED_DIR)" cargo +nightly build --examples --features export-diagrams
 	@for f in "$(GENERATED_DIR)"/*.dot ; do \
 		dot -Tpng "$$f" > "$$f".png ; \
 	done

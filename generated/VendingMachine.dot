@@ -1,0 +1,23 @@
+digraph Automata {
+  graph [pad="0.25", nodesep="0.75", ranksep="1"];
+  _initial_ [label="", fillcolor=black, fixedsize=true, height=0.25, style=filled, shape=circle];
+  _final_ [label="", fillcolor=black, fixedsize=true, height=0.25, style=filled, shape=doublecircle];
+  VendResult [shape=diamond];
+  _initial_ -> NoCoinsNorChocolates [label="initial"];
+  VendResult -> CoinsAndChocolates;
+  VendResult -> NoCoinsButChocolates;
+  VendResult -> CoinsButNoChocolates;
+  VendResult -> NoCoinsNorChocolates;
+  NoCoinsButChocolates -> CoinsAndChocolates [label="insert_coin"];
+  NoCoinsButChocolates -> NoCoinsButChocolates [label="get_coins"];
+  NoCoinsButChocolates -> NoCoinsButChocolates [label="refill"];
+  CoinsButNoChocolates -> NoCoinsNorChocolates [label="get_coins"];
+  CoinsButNoChocolates -> CoinsButNoChocolates [label="insert_coin"];
+  CoinsAndChocolates -> NoCoinsButChocolates [label="get_coins"];
+  CoinsAndChocolates -> VendResult [label="vend"];
+  CoinsAndChocolates -> CoinsAndChocolates [label="insert_coin"];
+  NoCoinsNorChocolates -> CoinsButNoChocolates [label="insert_coin"];
+  NoCoinsNorChocolates -> NoCoinsNorChocolates [label="get_coins"];
+  NoCoinsNorChocolates -> _final_ [label="r#final"];
+  NoCoinsNorChocolates -> NoCoinsButChocolates [label="refill"];
+}
