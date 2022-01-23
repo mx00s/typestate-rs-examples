@@ -8,9 +8,9 @@ use vending_machine::*;
 mod nonzero_biguint {
     use num_bigint::BigUint;
     use num_traits::{CheckedSub, One, Zero};
-    use std::ops::Add;
+    use std::ops::{Add, Mul};
 
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
     #[repr(transparent)]
     pub struct NonZeroBigUint(BigUint);
 
@@ -19,16 +19,16 @@ mod nonzero_biguint {
             n.try_into().ok()
         }
 
-        pub fn one() -> Self {
-            Self(BigUint::one())
-        }
-
         pub fn decrement(&self) -> Option<Self> {
             match self.inner().checked_sub(&BigUint::one()) {
                 None => unreachable!(),
                 Some(n) if n.is_zero() => None,
                 Some(n) => Some(Self(n)),
             }
+        }
+
+        pub fn increment(&self) -> Self {
+            Self(self.0.clone() + BigUint::one())
         }
 
         pub fn inner(&self) -> &BigUint {
@@ -50,10 +50,23 @@ mod nonzero_biguint {
         }
     }
 
+    impl One for NonZeroBigUint {
+        fn one() -> Self {
+            Self(BigUint::one())
+        }
+    }
+
     impl Add<BigUint> for NonZeroBigUint {
         type Output = Self;
         fn add(self, other: BigUint) -> Self {
             Self(self.inner() + other)
+        }
+    }
+
+    impl Mul for NonZeroBigUint {
+        type Output = Self;
+        fn mul(self, other: Self) -> Self {
+            Self(self.inner() * other.inner())
         }
     }
 }
@@ -128,7 +141,7 @@ impl CoinsAndChocolatesState for VendingMachine<CoinsAndChocolates> {
     fn insert_coin(self) -> VendingMachine<CoinsAndChocolates> {
         let result = VendingMachine {
             state: CoinsAndChocolates {
-                coins: self.state.coins + BigUint::one(),
+                coins: self.state.coins.increment(),
                 chocolates: self.state.chocolates,
             },
         };
@@ -268,7 +281,7 @@ impl CoinsButNoChocolatesState for VendingMachine<CoinsButNoChocolates> {
     fn insert_coin(self) -> VendingMachine<CoinsButNoChocolates> {
         let result = VendingMachine {
             state: CoinsButNoChocolates {
-                coins: self.state.coins + BigUint::one(),
+                coins: self.state.coins.increment(),
             },
         };
         debug!(?result, "inserted coin");
