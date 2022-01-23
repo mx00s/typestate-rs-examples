@@ -92,13 +92,13 @@ impl CoinsAndChocolatesState for VendingMachine<CoinsAndChocolates> {
     fn vend(self) -> VendResult {
         let result = match (self.state.coins.get(), self.state.chocolates.get()) {
             (1, 1) => {
-                trace!("last coin and chocolate!");
+                trace!("last coin and chocolate left!");
                 VendResult::NoCoinsNorChocolates(VendingMachine {
                     state: NoCoinsNorChocolates,
                 })
             }
             (1, chocolates) => {
-                trace!("last coin!");
+                trace!("last coin left!");
                 VendResult::NoCoinsButChocolates(VendingMachine {
                     state: NoCoinsButChocolates {
                         chocolates: unsafe { NonZeroUsize::new_unchecked(chocolates - 1) },
@@ -106,7 +106,7 @@ impl CoinsAndChocolatesState for VendingMachine<CoinsAndChocolates> {
                 })
             }
             (coins, 1) => {
-                trace!("last chocolate!");
+                trace!("last chocolate left!");
                 VendResult::CoinsButNoChocolates(VendingMachine {
                     state: CoinsButNoChocolates {
                         coins: unsafe { NonZeroUsize::new_unchecked(coins - 1) },
@@ -114,7 +114,7 @@ impl CoinsAndChocolatesState for VendingMachine<CoinsAndChocolates> {
                 })
             }
             (coins, chocolates) => {
-                trace!("not the last coin nor chocolate!");
+                trace!("not the last coin nor chocolate left!");
                 VendResult::CoinsAndChocolates(VendingMachine {
                     state: CoinsAndChocolates {
                         coins: unsafe { NonZeroUsize::new_unchecked(coins - 1) },
@@ -134,7 +134,8 @@ impl CoinsAndChocolatesState for VendingMachine<CoinsAndChocolates> {
                 chocolates: self.state.chocolates,
             },
         };
-        debug!(?result, "collected coins");
+        let coins = self.state.coins;
+        debug!(?result, coins, "collected coins");
         result
     }
 }
@@ -159,7 +160,7 @@ impl NoCoinsButChocolatesState for VendingMachine<NoCoinsButChocolates> {
                 chocolates: self.state.chocolates,
             },
         };
-        debug!(?result, "collected coins");
+        debug!(?result, "collected 0 coins");
         result
     }
 
@@ -233,7 +234,8 @@ impl CoinsButNoChocolatesState for VendingMachine<CoinsButNoChocolates> {
         let result = VendingMachine {
             state: NoCoinsNorChocolates,
         };
-        debug!(?result, "collected 0 coins");
+        let coins = self.state.coins;
+        debug!(?result, coins, "collected coins");
         result
     }
 }
@@ -248,6 +250,7 @@ fn main() -> Result<(), ()> {
     let vm = VendingMachine::<NoCoinsNorChocolates>::initial();
     let vm = vm.insert_coin();
     let vm = vm.insert_coin();
+    let vm = vm.get_coins();
     let vm = vm.get_coins();
     let vm = vm.refill(unsafe { NonZeroUsize::new_unchecked(3) });
     let vm = vm.insert_coin();
