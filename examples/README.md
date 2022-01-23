@@ -9,8 +9,6 @@ Simple state machine with two states, `Opened` and `Closed`.
 
 # [`vending_machine`](./vending_machine.rs)
 
-_Note that currently it's possible for either the number of coins or chocolates to overflow, and this is not safely handled. See the TODO comment in the source._
-
 Vending machine with four states:
 
 1. `CoinsAndChocolates`
