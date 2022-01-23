@@ -5,72 +5,6 @@ use tracing::{debug, instrument, trace};
 use typestate::typestate;
 use vending_machine::*;
 
-mod nonzero_biguint {
-    use num_bigint::BigUint;
-    use num_traits::{CheckedSub, One, Zero};
-    use std::ops::{Add, Mul};
-
-    #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-    #[repr(transparent)]
-    pub struct NonZeroBigUint(BigUint);
-
-    impl NonZeroBigUint {
-        pub fn new(n: BigUint) -> Option<Self> {
-            n.try_into().ok()
-        }
-
-        pub fn decrement(&self) -> Option<Self> {
-            match self.inner().checked_sub(&BigUint::one()) {
-                None => unreachable!(),
-                Some(n) if n.is_zero() => None,
-                Some(n) => Some(Self(n)),
-            }
-        }
-
-        pub fn increment(&self) -> Self {
-            Self(self.0.clone() + BigUint::one())
-        }
-
-        pub fn inner(&self) -> &BigUint {
-            &self.0
-        }
-    }
-
-    impl TryFrom<BigUint> for NonZeroBigUint {
-        type Error = ();
-        fn try_from(n: BigUint) -> Result<Self, Self::Error> {
-            (!n.is_zero()).then(|| NonZeroBigUint(n)).ok_or(())
-        }
-    }
-
-    impl TryFrom<usize> for NonZeroBigUint {
-        type Error = ();
-        fn try_from(n: usize) -> Result<Self, Self::Error> {
-            BigUint::from(n).try_into()
-        }
-    }
-
-    impl One for NonZeroBigUint {
-        fn one() -> Self {
-            Self(BigUint::one())
-        }
-    }
-
-    impl Add<BigUint> for NonZeroBigUint {
-        type Output = Self;
-        fn add(self, other: BigUint) -> Self {
-            Self(self.inner() + other)
-        }
-    }
-
-    impl Mul for NonZeroBigUint {
-        type Output = Self;
-        fn mul(self, other: Self) -> Self {
-            Self(self.inner() * other.inner())
-        }
-    }
-}
-
 // NB: `#[typestate]` injects a diagram of the state machine in the docs here.
 
 #[typestate]
@@ -296,6 +230,72 @@ impl CoinsButNoChocolatesState for VendingMachine<CoinsButNoChocolates> {
         let coins = self.state.coins;
         debug!(?result, ?coins, "collected coins");
         result
+    }
+}
+
+mod nonzero_biguint {
+    use num_bigint::BigUint;
+    use num_traits::{CheckedSub, One, Zero};
+    use std::ops::{Add, Mul};
+
+    #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+    #[repr(transparent)]
+    pub struct NonZeroBigUint(BigUint);
+
+    impl NonZeroBigUint {
+        pub fn new(n: BigUint) -> Option<Self> {
+            n.try_into().ok()
+        }
+
+        pub fn decrement(&self) -> Option<Self> {
+            match self.inner().checked_sub(&BigUint::one()) {
+                None => unreachable!(),
+                Some(n) if n.is_zero() => None,
+                Some(n) => Some(Self(n)),
+            }
+        }
+
+        pub fn increment(&self) -> Self {
+            Self(self.0.clone() + BigUint::one())
+        }
+
+        pub fn inner(&self) -> &BigUint {
+            &self.0
+        }
+    }
+
+    impl TryFrom<BigUint> for NonZeroBigUint {
+        type Error = ();
+        fn try_from(n: BigUint) -> Result<Self, Self::Error> {
+            (!n.is_zero()).then(|| NonZeroBigUint(n)).ok_or(())
+        }
+    }
+
+    impl TryFrom<usize> for NonZeroBigUint {
+        type Error = ();
+        fn try_from(n: usize) -> Result<Self, Self::Error> {
+            BigUint::from(n).try_into()
+        }
+    }
+
+    impl One for NonZeroBigUint {
+        fn one() -> Self {
+            Self(BigUint::one())
+        }
+    }
+
+    impl Add<BigUint> for NonZeroBigUint {
+        type Output = Self;
+        fn add(self, other: BigUint) -> Self {
+            Self(self.inner() + other)
+        }
+    }
+
+    impl Mul for NonZeroBigUint {
+        type Output = Self;
+        fn mul(self, other: Self) -> Self {
+            Self(self.inner() * other.inner())
+        }
     }
 }
 
