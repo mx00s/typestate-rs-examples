@@ -75,6 +75,13 @@ pub mod vending_machine {
 
 const ONE: NonZeroUsize = unsafe { NonZeroUsize::new_unchecked(1) };
 
+fn decrement(n: NonZeroUsize) -> Option<NonZeroUsize> {
+    match n.get() {
+        1 => None,
+        n => Some(unsafe { NonZeroUsize::new_unchecked(n - 1) }),
+    }
+}
+
 impl CoinsAndChocolatesState for VendingMachine<CoinsAndChocolates> {
     #[instrument]
     fn insert_coin(self) -> VendingMachine<CoinsAndChocolates> {
@@ -90,36 +97,32 @@ impl CoinsAndChocolatesState for VendingMachine<CoinsAndChocolates> {
 
     #[instrument]
     fn vend(self) -> VendResult {
-        let result = match (self.state.coins.get(), self.state.chocolates.get()) {
-            (1, 1) => {
+        let result = match (
+            decrement(self.state.coins),
+            decrement(self.state.chocolates),
+        ) {
+            (None, None) => {
                 trace!("last coin and chocolate left!");
                 VendResult::NoCoinsNorChocolates(VendingMachine {
                     state: NoCoinsNorChocolates,
                 })
             }
-            (1, chocolates) => {
+            (None, Some(chocolates)) => {
                 trace!("last coin left!");
                 VendResult::NoCoinsButChocolates(VendingMachine {
-                    state: NoCoinsButChocolates {
-                        chocolates: unsafe { NonZeroUsize::new_unchecked(chocolates - 1) },
-                    },
+                    state: NoCoinsButChocolates { chocolates },
                 })
             }
-            (coins, 1) => {
+            (Some(coins), None) => {
                 trace!("last chocolate left!");
                 VendResult::CoinsButNoChocolates(VendingMachine {
-                    state: CoinsButNoChocolates {
-                        coins: unsafe { NonZeroUsize::new_unchecked(coins - 1) },
-                    },
+                    state: CoinsButNoChocolates { coins },
                 })
             }
-            (coins, chocolates) => {
+            (Some(coins), Some(chocolates)) => {
                 trace!("not the last coin nor chocolate left!");
                 VendResult::CoinsAndChocolates(VendingMachine {
-                    state: CoinsAndChocolates {
-                        coins: unsafe { NonZeroUsize::new_unchecked(coins - 1) },
-                        chocolates: unsafe { NonZeroUsize::new_unchecked(chocolates - 1) },
-                    },
+                    state: CoinsAndChocolates { coins, chocolates },
                 })
             }
         };
