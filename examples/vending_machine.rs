@@ -76,7 +76,7 @@ impl CoinsAndChocolatesState for VendingMachine<CoinsAndChocolates> {
         let result = VendingMachine {
             state: CoinsAndChocolates {
                 coins: self.state.coins.increment(),
-                chocolates: self.state.chocolates,
+                ..self.state
             },
         };
         debug!(?result, "inserted coin");
@@ -125,8 +125,7 @@ impl CoinsAndChocolatesState for VendingMachine<CoinsAndChocolates> {
                 chocolates: self.state.chocolates,
             },
         };
-        let coins = self.state.coins;
-        debug!(?result, ?coins, "collected coins");
+        debug!(?result, coins = ?self.state.coins, "collected coins");
         result
     }
 }
@@ -146,11 +145,7 @@ impl NoCoinsButChocolatesState for VendingMachine<NoCoinsButChocolates> {
 
     #[instrument]
     fn get_coins(self) -> VendingMachine<NoCoinsButChocolates> {
-        let result = VendingMachine {
-            state: NoCoinsButChocolates {
-                chocolates: self.state.chocolates,
-            },
-        };
+        let result = self;
         debug!(?result, "collected 0 coins");
         result
     }
@@ -227,8 +222,7 @@ impl CoinsButNoChocolatesState for VendingMachine<CoinsButNoChocolates> {
         let result = VendingMachine {
             state: NoCoinsNorChocolates,
         };
-        let coins = self.state.coins;
-        debug!(?result, ?coins, "collected coins");
+        debug!(?result, coins = ?self.state.coins, "collected coins");
         result
     }
 }
