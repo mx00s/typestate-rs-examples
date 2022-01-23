@@ -1,6 +1,5 @@
 use door::*;
 use tracing::{debug, trace};
-use tracing_subscriber;
 use typestate::typestate;
 
 // NB: `#[typestate]` injects a diagram of the state machine in the docs here.

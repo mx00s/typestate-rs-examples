@@ -5,13 +5,13 @@ GENERATED_DIR = "./generated"
 all: docs diagrams
 
 run:
-	@cargo run --example $(EXAMPLE_NAME)
+	@cargo +nightly run --example $(EXAMPLE_NAME)
 
 docs:
-	@cargo doc --examples
+	@cargo +nightly doc --examples
 
 show-docs:
-	@cargo doc --examples --open
+	@cargo +nightly doc --examples --open
 
 diagrams: clean
 	@EXPORT_FOLDER="$(GENERATED_DIR)" cargo +nightly build --examples --features export-diagrams
@@ -20,5 +20,5 @@ diagrams: clean
 	done
 
 clean:
-	@cargo clean
+	@cargo +nightly clean
 	@rm -rf "$(GENERATED_DIR)"

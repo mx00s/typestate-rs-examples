@@ -3,7 +3,6 @@
 use std::num::NonZeroUsize;
 
 use tracing::{debug, instrument, trace};
-// use tracing_subscriber;
 use typestate::typestate;
 use vending_machine::*;
 
