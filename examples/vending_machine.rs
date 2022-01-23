@@ -108,19 +108,19 @@ impl CoinsAndChocolatesState for VendingMachine<CoinsAndChocolates> {
                 })
             }
             (None, Some(chocolates)) => {
-                trace!("last coin left!");
+                trace!(?chocolates, "last coin left!");
                 VendResult::NoCoinsButChocolates(VendingMachine {
                     state: NoCoinsButChocolates { chocolates },
                 })
             }
             (Some(coins), None) => {
-                trace!("last chocolate left!");
+                trace!(?coins, "last chocolate left!");
                 VendResult::CoinsButNoChocolates(VendingMachine {
                     state: CoinsButNoChocolates { coins },
                 })
             }
             (Some(coins), Some(chocolates)) => {
-                trace!("not the last coin nor chocolate left!");
+                trace!(?coins, ?chocolates, "not the last coin nor chocolate left!");
                 VendResult::CoinsAndChocolates(VendingMachine {
                     state: CoinsAndChocolates { coins, chocolates },
                 })
