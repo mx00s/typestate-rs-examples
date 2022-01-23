@@ -1,19 +1,69 @@
-#![feature(nonzero_ops)]
-
-use std::num::NonZeroUsize;
-
+use nonzero_biguint::*;
+use num_bigint::BigUint;
+use num_traits::One;
 use tracing::{debug, instrument, trace};
 use typestate::typestate;
 use vending_machine::*;
 
-// NB: `#[typestate]` injects a diagram of the state machine in the docs here.
+mod nonzero_biguint {
+    use num_bigint::BigUint;
+    use num_traits::{CheckedSub, One, Zero};
+    use std::ops::Add;
 
-// TODO: Prevent overflows, either by implementing a Error and Result types or
-// switching to an arbitrary precision unsized integer.
+    #[derive(Debug, Clone)]
+    #[repr(transparent)]
+    pub struct NonZeroBigUint(BigUint);
+
+    impl NonZeroBigUint {
+        pub fn new(n: BigUint) -> Option<Self> {
+            n.try_into().ok()
+        }
+
+        pub fn one() -> Self {
+            Self(BigUint::one())
+        }
+
+        pub fn decrement(&self) -> Option<Self> {
+            match self.inner().checked_sub(&BigUint::one()) {
+                None => unreachable!(),
+                Some(n) if n.is_zero() => None,
+                Some(n) => Some(Self(n)),
+            }
+        }
+
+        pub fn inner(&self) -> &BigUint {
+            &self.0
+        }
+    }
+
+    impl TryFrom<BigUint> for NonZeroBigUint {
+        type Error = ();
+        fn try_from(n: BigUint) -> Result<Self, Self::Error> {
+            (!n.is_zero()).then(|| NonZeroBigUint(n)).ok_or(())
+        }
+    }
+
+    impl TryFrom<usize> for NonZeroBigUint {
+        type Error = ();
+        fn try_from(n: usize) -> Result<Self, Self::Error> {
+            BigUint::from(n).try_into()
+        }
+    }
+
+    impl Add<BigUint> for NonZeroBigUint {
+        type Output = Self;
+        fn add(self, other: BigUint) -> Self {
+            Self(self.inner() + other)
+        }
+    }
+}
+
+// NB: `#[typestate]` injects a diagram of the state machine in the docs here.
 
 #[typestate]
 pub mod vending_machine {
-    use std::num::NonZeroUsize;
+    use super::nonzero_biguint::NonZeroBigUint;
+    use num_bigint::BigUint;
 
     /// Automaton with some internal state.
     #[automaton]
@@ -23,8 +73,8 @@ pub mod vending_machine {
     #[state]
     #[derive(Clone, Debug)]
     pub struct CoinsAndChocolates {
-        pub coins: NonZeroUsize,
-        pub chocolates: NonZeroUsize,
+        pub coins: NonZeroBigUint,
+        pub chocolates: NonZeroBigUint,
     }
     pub trait CoinsAndChocolates {
         fn insert_coin(self) -> CoinsAndChocolates;
@@ -43,18 +93,18 @@ pub mod vending_machine {
     #[state]
     #[derive(Clone, Debug)]
     pub struct NoCoinsButChocolates {
-        pub chocolates: NonZeroUsize,
+        pub chocolates: NonZeroBigUint,
     }
     pub trait NoCoinsButChocolates {
         fn insert_coin(self) -> CoinsAndChocolates;
         fn get_coins(self) -> NoCoinsButChocolates;
-        fn refill(self, bars: NonZeroUsize) -> NoCoinsButChocolates;
+        fn refill(self, bars: BigUint) -> NoCoinsButChocolates;
     }
 
     #[state]
     #[derive(Clone, Debug)]
     pub struct CoinsButNoChocolates {
-        pub coins: NonZeroUsize,
+        pub coins: NonZeroBigUint,
     }
     pub trait CoinsButNoChocolates {
         fn insert_coin(self) -> CoinsButNoChocolates;
@@ -68,17 +118,8 @@ pub mod vending_machine {
         fn initial() -> NoCoinsNorChocolates;
         fn insert_coin(self) -> CoinsButNoChocolates;
         fn get_coins(self) -> NoCoinsNorChocolates;
-        fn refill(self, bars: NonZeroUsize) -> NoCoinsButChocolates;
+        fn refill(self, bars: NonZeroBigUint) -> NoCoinsButChocolates;
         fn r#final(self);
-    }
-}
-
-const ONE: NonZeroUsize = unsafe { NonZeroUsize::new_unchecked(1) };
-
-fn decrement(n: NonZeroUsize) -> Option<NonZeroUsize> {
-    match n.get() {
-        1 => None,
-        n => Some(unsafe { NonZeroUsize::new_unchecked(n - 1) }),
     }
 }
 
@@ -87,7 +128,7 @@ impl CoinsAndChocolatesState for VendingMachine<CoinsAndChocolates> {
     fn insert_coin(self) -> VendingMachine<CoinsAndChocolates> {
         let result = VendingMachine {
             state: CoinsAndChocolates {
-                coins: unsafe { self.state.coins.unchecked_add(1usize) },
+                coins: self.state.coins + BigUint::one(),
                 chocolates: self.state.chocolates,
             },
         };
@@ -98,8 +139,8 @@ impl CoinsAndChocolatesState for VendingMachine<CoinsAndChocolates> {
     #[instrument]
     fn vend(self) -> VendResult {
         let result = match (
-            decrement(self.state.coins),
-            decrement(self.state.chocolates),
+            self.state.coins.decrement(),
+            self.state.chocolates.decrement(),
         ) {
             (None, None) => {
                 trace!("last coin and chocolate left!");
@@ -138,7 +179,7 @@ impl CoinsAndChocolatesState for VendingMachine<CoinsAndChocolates> {
             },
         };
         let coins = self.state.coins;
-        debug!(?result, coins, "collected coins");
+        debug!(?result, ?coins, "collected coins");
         result
     }
 }
@@ -148,7 +189,7 @@ impl NoCoinsButChocolatesState for VendingMachine<NoCoinsButChocolates> {
     fn insert_coin(self) -> VendingMachine<CoinsAndChocolates> {
         let result = VendingMachine {
             state: CoinsAndChocolates {
-                coins: ONE,
+                coins: NonZeroBigUint::one(),
                 chocolates: self.state.chocolates,
             },
         };
@@ -168,10 +209,10 @@ impl NoCoinsButChocolatesState for VendingMachine<NoCoinsButChocolates> {
     }
 
     #[instrument]
-    fn refill(self, bars: std::num::NonZeroUsize) -> VendingMachine<NoCoinsButChocolates> {
+    fn refill(self, bars: BigUint) -> VendingMachine<NoCoinsButChocolates> {
         let result = VendingMachine {
             state: NoCoinsButChocolates {
-                chocolates: unsafe { self.state.chocolates.unchecked_add(bars.get()) },
+                chocolates: self.state.chocolates + bars,
             },
         };
         debug!(?result, "restocked with chocolates");
@@ -192,7 +233,9 @@ impl NoCoinsNorChocolatesState for VendingMachine<NoCoinsNorChocolates> {
     #[instrument]
     fn insert_coin(self) -> VendingMachine<CoinsButNoChocolates> {
         let result = VendingMachine {
-            state: CoinsButNoChocolates { coins: ONE },
+            state: CoinsButNoChocolates {
+                coins: NonZeroBigUint::one(),
+            },
         };
         debug!(?result, "inserted coin");
         result
@@ -206,7 +249,7 @@ impl NoCoinsNorChocolatesState for VendingMachine<NoCoinsNorChocolates> {
     }
 
     #[instrument]
-    fn refill(self, bars: std::num::NonZeroUsize) -> VendingMachine<NoCoinsButChocolates> {
+    fn refill(self, bars: NonZeroBigUint) -> VendingMachine<NoCoinsButChocolates> {
         let result = VendingMachine {
             state: NoCoinsButChocolates { chocolates: bars },
         };
@@ -225,7 +268,7 @@ impl CoinsButNoChocolatesState for VendingMachine<CoinsButNoChocolates> {
     fn insert_coin(self) -> VendingMachine<CoinsButNoChocolates> {
         let result = VendingMachine {
             state: CoinsButNoChocolates {
-                coins: unsafe { self.state.coins.unchecked_add(1usize) },
+                coins: self.state.coins + BigUint::one(),
             },
         };
         debug!(?result, "inserted coin");
@@ -238,7 +281,7 @@ impl CoinsButNoChocolatesState for VendingMachine<CoinsButNoChocolates> {
             state: NoCoinsNorChocolates,
         };
         let coins = self.state.coins;
-        debug!(?result, coins, "collected coins");
+        debug!(?result, ?coins, "collected coins");
         result
     }
 }
@@ -255,7 +298,7 @@ fn main() -> Result<(), ()> {
     let vm = vm.insert_coin();
     let vm = vm.get_coins();
     let vm = vm.get_coins();
-    let vm = vm.refill(unsafe { NonZeroUsize::new_unchecked(3) });
+    let vm = vm.refill(3.try_into().unwrap());
     let vm = vm.insert_coin();
     let vm = match vm.vend() {
         VendResult::NoCoinsButChocolates(vm) => vm,

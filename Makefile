@@ -5,20 +5,20 @@ GENERATED_DIR = "./generated"
 all: docs diagrams
 
 run:
-	@cargo +nightly run --example $(EXAMPLE_NAME)
+	@cargo run --example $(EXAMPLE_NAME)
 
 docs:
-	@cargo +nightly doc --examples
+	@cargo doc --examples
 
 show-docs:
-	@cargo +nightly doc --examples --open
+	@cargo doc --examples --open
 
 diagrams: clean
-	@EXPORT_FOLDER="$(GENERATED_DIR)" cargo +nightly build --examples --features export-diagrams
+	@EXPORT_FOLDER="$(GENERATED_DIR)" cargo build --examples --features export-diagrams
 	@for f in "$(GENERATED_DIR)"/*.dot ; do \
 		dot -Tpng "$$f" > "$$f".png ; \
 	done
 
 clean:
-	@cargo +nightly clean
+	@cargo clean
 	@rm -rf "$(GENERATED_DIR)"
